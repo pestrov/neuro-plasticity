@@ -1,5 +1,5 @@
 // Heterogeneity vectors
-vector<double> E(neurons + dNeurons);
+vector<double> E(neurons + dNeurons); //leak?
 vector<double> g_L(neurons + dNeurons);
 vector<double> tau_M(neurons + dNeurons);
 vector<double> Vth_E(neurons + dNeurons);//(NE);

@@ -1,5 +1,5 @@
 // Size of network and number of trials
-const int nTrials = 6000; 
+const int nTrials = 2;
 const int neurons = 600;
 const int interneurons = int(neurons / 5);
 const int NE = neurons - interneurons;
@@ -7,7 +7,7 @@ const int NI = interneurons;
 const int nPools = 16; // number of pools
 const int inputs = 4; // number of stimul
 vector<int> inputsVec(inputs); // vector for inputs
-const int trialStim = 2; // No of inputs per trial 
+const int trialStim = 2; // Number of inputs per trial 
 
 // DL Network noise amplitudes
 //const double sigma = 20.0e-6; // DL Voltage noise amplitude

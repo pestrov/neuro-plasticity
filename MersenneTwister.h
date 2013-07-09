@@ -290,7 +290,7 @@ inline void MTRand::load( uint32 *const loadArray )
 	register uint32 *la = loadArray;
 	register int i = N;
 	for( ; i--; *s++ = *la++ ) {}
-	left = *la;
+	left = (int)*la;
 	pNext = &state[N-left];
 }
 

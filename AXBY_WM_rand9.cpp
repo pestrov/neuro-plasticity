@@ -138,21 +138,21 @@ void findinputs(int& digit1, int& digit2, int& inputCells, double& inputProb, in
 //// REWARD HISTORY FUNCTIONS ////
 
 // Here, we fill out the preliminary reward history.
-void fillHistFactor(vector<double>& histFactor, double& sumHistFactor, double histDecay, int nHist) {
-    histFactor[0] = (1 - histDecay) / (1 - exp(log(histDecay) * nHist)); // Exponential decay trace
-    sumHistFactor = histFactor[0];
-    for (int i = 1; i < nHist; i++) {
+void fillHistFactor(vector<double>& histFactor, double& histFactorSum, double histDecay, int historyLength) {
+    histFactor[0] = (1 - histDecay) / (1 - exp(log(histDecay) * historyLength)); // Exponential decay trace
+    histFactorSum = histFactor[0];
+    for (int i = 1; i < historyLength; i++) {
         histFactor[i] = histFactor[i-1] * histDecay; 
-        sumHistFactor += histFactor[i];
+        histFactorSum += histFactor[i];
     }
-    // Our sumHistFactor should be 1.  We'll check that this is true in our print statement below.
-    cout << "sumHistFactor = 1? " << sumHistFactor << endl;
+    // Our histFactorSum should be 1.  We'll check that this is true in our print statement below.
+    cout << "histFactorSum = 1? " << histFactorSum << endl;
 }
 
 //// TIME FUNCTIONS ////
 
 // Here, we fill out our time vector.  We also initialize cue length, delay length, and stimulus delivery times.
-void fillTime(vector<double>& t, vector<double>& tOn, vector<double>& tOff, double& cue1Length, double& cue2Length, double& delay1Length, double& delay2Length, int tMax, int nT, double dt) {
+void fillTime(vector<double>& t, vector<double>& tOn, vector<double>& tOff, double& stimulus1Length, double& cue2Length, double& delay1Length, double& delay2Length, int tMax, int nT, double dt) {
     for (int i = 0; i <= nT; i++) {
         t[i] = dt * double(i);
     }
@@ -162,7 +162,7 @@ void fillTime(vector<double>& t, vector<double>& tOn, vector<double>& tOff, doub
     tOn[1] = 1.25;
     tOff[1] = 1.75;
     // Cue and delay lengths
-    cue1Length = tOff[0] - tOn[0];
+    stimulus1Length = tOff[0] - tOn[0];
     cue2Length = tOff[1] - tOn[1];
     delay1Length = tOn[1] - tOff[0];
     delay2Length = tMax - tOff[1];
@@ -365,7 +365,7 @@ void normalize_And_C1C3Bools(int neurons, int dNeurons, int nIn, vector< vector<
 
 // Here, we initialize our heterogeneity vectors.
 void initialize_Heterogeneity_Vectors(int neurons, int NE, int dNE, int dNeurons, MTRand& rand1, vector<double>& E, double E_s, vector<double>& tau_M, double tau_M_S, vector<double>& g_L, double AL_g_L_s, vector<double>& vth_E, double vth_E_sA, vector<double>& vReset_E, double vReset_E_s, vector<double>& tRef_E, double tRef_E_s, double vth_I_sA, double vReset_I_s, double tRef_I_s, double g_L_s, double vth_E_sD, double vth_I_sD) {
-    // Static value * (heterogeneous offset value, which is mean static value subtracting heterogeneous offset!) * (random number from the uniform set=> [-0.5...0.5] )
+    // Static value + (heterogeneous offset value, which is mean static value subtracting heterogeneous offset!) * (random number from the uniform set=> [-0.5...0.5] )
     for (int i = 0; i < neurons; i++) {
         E[i] = E_s + (2.5e-3) * (rand1() - 0.5);  //-70e-3
         if (i < NE) {
@@ -560,10 +560,10 @@ void pSyn_AMPADecay(int nIn, vector<double>& pSyn, double AMPADecay) {
 }
 
 // Here, we initialize cellStart and cellStop (and cellStart2 and cellStop2).
-void initialize_CellStartAndStop(double ti, double tOn0, double tOff0, double tOn1, double tOff1, bool& InputOn, bool& InputOn2, int stim, int& cellStart, int& cellStop, int& cellStart2, int& cellStop2, int inputCells, bool urgency, double& g_Urgency, double gMax_Urgency) {
+void initialize_CellStartAndStop(double ti, double tOn0, double tOff0, double tOn1, double tOff1, bool& InputOn1, bool& InputOn2, int stimNumber, int& cellStart, int& cellStop, int& cellStart2, int& cellStop2, int inputCells, bool urgency, double& g_Urgency, double gMax_Urgency) {
     if (ti > tOn0 && ti <= tOff0) {
-        InputOn = 1;
-        if (stim == 1 || stim == 2) { //A
+        InputOn1 = 1;
+        if (stimNumber == 1 || stimNumber == 2) { //A
             cellStart = 0;
             cellStop = inputCells - 1;				  
         } else { // C
@@ -573,7 +573,7 @@ void initialize_CellStartAndStop(double ti, double tOn0, double tOff0, double tO
     }
     if (ti > tOn1 && ti <= tOff1) {
         InputOn2 = 1; 
-        if (stim == 1 || stim == 3) { // B
+        if (stimNumber == 1 || stimNumber == 3) { // B
             cellStart2 = 2 * inputCells;
             cellStop2 = 3 * inputCells - 1;
         } else { // D
@@ -590,8 +590,8 @@ void initialize_CellStartAndStop(double ti, double tOn0, double tOff0, double tO
 }
 
 // Here, we perform the calculations necessary for a given input.
-void use_InputOn(int cellStart, int cellStop, double dt, MTRand& rand3, double r0, vector< int>& nPSpikes, int max_InputSpikes, double ti, vector< vector<double> >& pSpikes, double pSynMax, double s0, vector<double>& pSyn) {
-    for (int cell = cellStart; cell <= cellStop; cell++) { // first stimulus of pair
+void use_InputOn(int startingCell, int stoppingCell, double dt, MTRand& rand3, double r0, vector< int>& nPSpikes, int max_InputSpikes, double ti, vector< vector<double> >& pSpikes, double pSynMax, double s0, vector<double>& pSyn) {
+    for (int cell = startingCell; cell <= stoppingCell; cell++) { // first stimulus of pair
         double dt1 = dt;
         double randt = rand3() / r0;
         while (randt < dt1) {
@@ -838,26 +838,26 @@ void update_Inhib_Excit_Synapses(int j, double Vji, double vSpike, double synMax
 }
 
 // Here, we update our cue firing rate in cueFR.
-void write_Cue_Firing_Rate(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn0, double tOff0, double tOn1, double tOff1, vector< int>& cueFR, double cue1Length, double cue2Length) {
+void write_Cue_Firing_Rate(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn0, double tOff0, double tOn1, double tOff1, vector< int>& cueFR, double stimulus1Length, double cue2Length) {
     for (int j = 0; j < neurons; j++) {
         for (int k = 0; k < numberSpikes[j]; k++) {
             if ((spikeTimes[j][k] > tOn0 && spikeTimes[j][k] < tOff0) || (spikeTimes[j][k] > tOn1 && spikeTimes[j][k] < tOff1)) { // all spikes from start of first stim to end of 2nd stim.
                 cueFR[j]++;
             }
         }
-        cueFR[j] /= (cue1Length+cue2Length);
+        cueFR[j] /= (stimulus1Length+cue2Length);
     }
 }
 
 // Here, we measure selectivity in 1st stim.
-void measure_Selectivity_1st_Stim(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn0, double tOff0, double tOn1, double tOff1, vector< int>& cueFR_1stStim, double cue1Length) {
+void measure_Selectivity_1st_Stim(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn0, double tOff0, double tOn1, double tOff1, vector< int>& cueFR_1stStim, double stimulus1Length) {
     for (int j = 0; j < neurons; j++) {
         for (int k = 0; k < numberSpikes[j]; k++) {
             if (spikeTimes[j][k] > tOn0 && spikeTimes[j][k] < tOff0) { // 2nd stim spikes only.
                 cueFR_1stStim[j]++;
             }
         }
-    cueFR_1stStim[j] /= cue1Length;
+    cueFR_1stStim[j] /= stimulus1Length;
     }
 }
 
@@ -1420,9 +1420,9 @@ void find_Reward(int stim, int population, int& reward) {
 }
 
 // Here, we add reward prediction error factor into dopamine signal.
-void add_Reward_Dopamine(int trialBatch, int nHist, double& expectReward, vector<double>& histFactor, vector< vector< int> >& decisionHist, int stim) {
-    if (trialBatch >= nHist) {
-        for (int i = 1; i <= nHist; i++) {
+void add_Reward_Dopamine(int trialBatch, int historyLength, double& expectReward, vector<double>& histFactor, vector< vector< int> >& decisionHist, int stim) {
+    if (trialBatch >= historyLength) {
+        for (int i = 1; i <= historyLength; i++) {
             expectReward += histFactor[i - 1] * decisionHist[trialBatch - i][stim - 1];
         }
     } else {
@@ -1879,34 +1879,36 @@ int main(int argc, char **argv) {
         cout << "Error: your numIn is 0 or is greater than 25 after seed reductions." << endl;
         exit(1);
     }
-    // Assuming that our numIn is less than or equal to 25 (and greater than 0), we will find 
+    // Now, having computed our seed values, we set the seeds for our
+    // MersenneTwister random objects created above.
+    rand1.seed(seed1);
+    rand2.seed(seed2);
+    rand3.seed(seed3);
+    
+    // Assuming that our numIn is less than or equal to 25 (and greater than 0), we will find
     // the digits for the indices of our input cells (digit1) and input probability (digit2) arrays.  
     int digit1 = 0;
     int digit2 = 0;
     // We will use the findDigits function defined above.
     findDigits(digit1, digit2, numIn);
     // Now, we'll use these digits to find the input for our cells and probability.
-	int inputCells = 0;
+    int inputCellsNumber = 0;
     double inputProb = 0;
     // We use the findinputs function defined above.
-    findinputs(digit1, digit2, inputCells, inputProb, inputCellArray, inputProbArray);
+    findinputs(digit1, digit2, inputCellsNumber, inputProb, inputCellArray, inputProbArray);
     // We find our nIn value by multiplying the number of inputs by the number of input cells
-    const int nIn = inputs * inputCells;
+    const int nIn = inputs * inputCellsNumber;
     // We'll also compute our r0 value, which is the input rate (Hz) per input cell.
-    double r0 = 480.0 / inputCells / (3 * inputProb);
-    // Now, having computed our seed values, we set the seeds for our 
-    // MersenneTwister random objects created above.
-    rand1.seed(seed1);
-    rand2.seed(seed2);
-    rand3.seed(seed3);
+    double inputRate = 480.0 / inputCellsNumber / (3 * inputProb);
     // We will use srand when using the random_shuffle function below
     // to select our stim value for each trial.  
-    srand(seed1);       
+    srand(seed1);
+    
     ////////// STEP 3B: REWARD PREDICTION, TIME, AND GOAL RATE //////////
     // REWARD PREDICTION HISTORY
-    fillHistFactor(histFactor, sumHistFactor, histDecay, nHist);
+    fillHistFactor(histFactor, histFactorSum, histDecay, historyLength);
     // TIME VECTORS (t, preliminary values for tOn and tOff)
-    fillTime(t, tOn, tOff, cue1Length, cue2Length, delay1Length, delay2Length, tMax, nT, dt);
+    fillTime(t, tOn, tOff, stimulus1Length, stimulus2Length, delay1Length, delay2Length, tMax, nT, dt);
     // GOAL RATE VECTORS, WITH NOISE FOR HETEROGENEITY
     fillGoalVectors(r_Goal, r_Goal_I_to_E, r_DGoal, NE, NI, dNE, rand1, rgE, rgIE0, rgI, rgD);
     ////////// STEP 2C: WEIGHT-RELATED INITIALIZATIONS //////////
@@ -1959,8 +1961,8 @@ int main(int argc, char **argv) {
     cout << "Neurons: " << neurons << endl;
     // Let's print some decision layer values.
     cout << "Decision neurons: " << dNeurons << " dNEPool: " << dNEPool << " dNIPool: " << dNIPool << endl;
-    cout << "r0: " << r0 << endl;
-    cout << "cue1Length = " << cue1Length << " cue2Length = " << cue2Length << " 1st delay1Length = " << delay1Length << " 2nd delay1Length = " << delay2Length << endl;
+    cout << "r0: " << inputRate << endl;
+    cout << "stimulus1Length = " << stimulus1Length << " stimulus2Length = " << stimulus2Length << " 1st delay1Length = " << delay1Length << " 2nd delay1Length = " << delay2Length << endl;
     cout << "rgIE0 = " << rgIE0 + rgE << endl;
     cout << "pW0 " <<  pW0  << endl;
     if (DL_Poisson_Test) {
@@ -1997,29 +1999,29 @@ int main(int argc, char **argv) {
         // Initialize facilitation / depression factors
         initialize_FacAndDep(facilitation, depression, NE, Fac, Dep, F0, D0);        
         // Using a fixed stimulus below
-        stimSetup(stim, trial, stimShuffle);
+        stimSetup(stimulusNumber, trial, stimShuffle);
         // Poisson inputs
         vector<int> nPSpikes(nIn);
         ////// Time Integration //////
         for (int i = 1; i <= nT; i++) {
             // Define pSyn during each input, A, B,// AB
             pSyn_AMPADecay(nIn, pSyn, AMPADecay);        	
-            bool InputOn = 0;
+            bool InputOn1 = 0;
             bool InputOn2 = 0; 
-            int cellStart = 0;
-            int cellStop = 0;
-            int cellStart2 = 0;
-            int cellStop2 = 0;
+            int startingCell1 = 0;
+            int stoppingCell1 = 0;
+            int startingCell2 = 0;
+            int stoppingCell2 = 0;
             // conductance that ramps up for DL cells when urgency == 1 
             double g_Urgency = 0;
             // Initialize cellStart / cellStop / cellStart2 / cellStop2
-            initialize_CellStartAndStop(t[i], tOn[0], tOff[0], tOn[1], tOff[1], InputOn, InputOn2, stim, cellStart, cellStop, cellStart2, cellStop2, inputCells, urgency, g_Urgency, gMax_Urgency);
+            initialize_CellStartAndStop(t[i], tOn[0], tOff[0], tOn[1], tOff[1], InputOn1, InputOn2, stimulusNumber, startingCell1, stoppingCell1, startingCell2, stoppingCell2, inputCellsNumber, urgency, g_Urgency, gMax_Urgency);
             // First stimulus of pair, then second one
-            if (InputOn) {
-                use_InputOn(cellStart, cellStop, dt, rand3, r0, nPSpikes, max_InputSpikes, t[i], pSpikes, pSynMax, s0, pSyn);
+            if (InputOn1) {
+                use_InputOn(startingCell1, stoppingCell1, dt, rand3, inputRate, nPSpikes, max_InputSpikes, t[i], pSpikes, pSynMax, s0, pSyn);
             }
             if (InputOn2) {
-                use_InputOn(cellStart2, cellStop2, dt, rand3, r0, nPSpikes, max_InputSpikes, t[i], pSpikes, pSynMax, s0, pSyn);
+                use_InputOn(startingCell2, stoppingCell2, dt, rand3, inputRate, nPSpikes, max_InputSpikes, t[i], pSpikes, pSynMax, s0, pSyn);
             }
             ////// Network Code //////
             for (int j = 0; j < neurons + dNeurons; j++) {  // probably need to run over both layers 
@@ -2061,16 +2063,18 @@ int main(int argc, char **argv) {
                 // Update inhibitory and excitatory synapses
                 update_Inhib_Excit_Synapses(j, V[j][i], vSpike, synMax_I, synMax_E, synMax_NMDA, s0, syn_I, syn_E, syn_NMDA, NE, neurons, dNE, facilitation, depression, synE_Fac, synNMDA_Fac, Fac, synE_Dep, synNMDA_Dep, Dep, alpha, fMax, dFrac);
             }  // end network code ****
+            
+            
         }  // end time integration
         vector<int> cueFR(neurons + dNeurons);
         // Write the cue firing rate of each neuron during stimulus presentation.
-        write_Cue_Firing_Rate(neurons, numberSpikes, spikeTimes, tOn[0], tOff[0], tOn[1], tOff[1], cueFR, cue1Length, cue2Length);
+        write_Cue_Firing_Rate(neurons, numberSpikes, spikeTimes, tOn[0], tOff[0], tOn[1], tOff[1], cueFR, stimulus1Length, stimulus2Length);
         // Activity during the first stimulus to measure selectivity  from 1st stimulus.
         vector<int> cueFR_1stStim(neurons);
-        measure_Selectivity_1st_Stim(neurons, numberSpikes, spikeTimes, tOn[0], tOff[0], tOn[1], tOff[1], cueFR_1stStim, cue1Length);
+        measure_Selectivity_1st_Stim(neurons, numberSpikes, spikeTimes, tOn[0], tOff[0], tOn[1], tOff[1], cueFR_1stStim, stimulus1Length);
         // Activity during the second stimulus to measure selectivity with persistent activity from 1st stimulus. (When persistent selective activity has arisen).
         vector<int> cueFR_2ndStim_Perst(neurons);
-        measure_Selectivity_2nd_StimPerst(neurons, numberSpikes, spikeTimes, tOn[1], tOff[1], cueFR_2ndStim_Perst, cue2Length);
+        measure_Selectivity_2nd_StimPerst(neurons, numberSpikes, spikeTimes, tOn[1], tOff[1], cueFR_2ndStim_Perst, stimulus2Length);
         // Activity during the second stimulus to measure selectivity with persistent activity from 1st stimulus. (When persistent selective activity has arisen).
         vector<int> cueFR_Perst(neurons);
         measure_Selectivity_Perst(NE, numberSpikes, spikeTimes, tOff[0], tOn[1], cueFR_Perst, delay1Length);
@@ -2193,26 +2197,26 @@ int main(int argc, char **argv) {
             // Reaction Time - localized to bin (Reaction Time defined by first bin in which one population is firing at least 20Hz above the other, can also add threshold (e.g. also be above 20Hz or something)
             find_Reaction_Time(nBins, eBinRate);
             // if AB/CD are input and "Release" population wins => reward OR if AD/CB are input and "Hold" population wins => reward
-            find_Reward(stim, population, reward);
+            find_Reward(stimulusNumber, population, reward);
             int trialBatch = (trial - 1) / inputs;
-            decisionHist[trialBatch][stim - 1] = reward;
+            decisionHist[trialBatch][stimulusNumber - 1] = reward;
             if (plasticityOn) {	
                 if (DA_Reward) { 
                     double expectReward = 0;
                     double rewardExpectationError = 0;
                     if (rewardExpectation) {
                         // ADD REWARD PREDICTION ERROR FACTOR INTO DOPAMINE SIGNAL
-                        add_Reward_Dopamine(trialBatch, nHist, expectReward, histFactor, decisionHist, stim);
+                        add_Reward_Dopamine(trialBatch, historyLength, expectReward, histFactor, decisionHist, stimulusNumber);
                     }
                     // Compute and display reward expectation error
-                    display_Reward_Expectation_Error(rewardExpectationError, reward, expectReward, stim);              
+                    display_Reward_Expectation_Error(rewardExpectationError, reward, expectReward, stimulusNumber);              
                     // Basic Poisson DA reward rule.
                     poisson_DA_Reward_Rule(NE, cueFR_2ndStim_Perst, mean_Network_ENeuron_Rate, DA_Epsilon, rewardExpectationError, population, neurons, dNEPool, W, dLayerInput_W0, dNE);
                     // Max/min total change to synapse
                     double mean_W_AD1 = 0;
                     double mean_W_AD2 = 0;
                     compute_Max_Min_Change_Synapse(NE, neurons, dNE, W, dLayerInput_W0, mean_W_AD1, mean_W_AD2);     
-                    print_Final_Plasticity_Info(eBinRate[0][testBin], eBinRate[1][testBin], population, reward, stim);
+                    print_Final_Plasticity_Info(eBinRate[0][testBin], eBinRate[1][testBin], population, reward, stimulusNumber);
                 } 
             }             
             // Data output code placement
