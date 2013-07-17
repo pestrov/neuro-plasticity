@@ -852,6 +852,12 @@ void write_Cue_Firing_Rate(int neurons, vector< int>& numberSpikes, vector< vect
         cueFR[j] /= (cue1Length+cue2Length);
     }
 }
+//Creates a path with working directory
+const char* workingPathToFile(string filename){
+    string working = workingDir;
+    working+=filename;
+    return working.c_str();
+}
 //Here me update the maximum fire rates and find the mean selectivity
 void measure_selectivity (int NE, vector<double>& maxFR, vector< int>& cueFR_2ndStim_Perst, int stimulus) {
     
@@ -882,8 +888,7 @@ void measure_selectivity (int NE, vector<double>& maxFR, vector< int>& cueFR_2nd
     
     //Write that to disk
     ofstream selectiveFile;
-    string working = workingDir;
-    selectiveFile.open(working+"NPSelectivity.dat", std::ios::app);
+    selectiveFile.open(workingPathToFile("NPSelectivity.dat"), std::ios::app);
     selectiveFile << meanSelectivity<< endl;
     selectiveFile.close();
 
@@ -1549,8 +1554,7 @@ void print_Final_Plasticity_Info(double eBinRate0testBin, double eBinRate1testBi
 // Here, we print our WR_ds values.
 void print_WR_ds(int NE, vector<double>& WR_ds) { 
     ofstream WDSrout;
-    string working = workingDir;
-    WDSrout.open(working+"WDSr.dat", std::ios::app);
+    WDSrout.open(workingPathToFile("WDSr.dat"), std::ios::app);
     for (int j = 0; j < NE; j++) {
         WDSrout << WR_ds[j] << " " << j << endl;
     }
@@ -1561,8 +1565,7 @@ void print_WR_ds(int NE, vector<double>& WR_ds) {
 void print_Wds(int trial, int NE, vector<double>& Wds) {
     if (trial == 1 || trial % 4 == 1 || trial == nTrials) {
         ofstream Wdsout3;
-        string working = workingDir;
-        Wdsout3.open(working+"Wds.dat", std::ios::app);
+        Wdsout3.open(workingPathToFile("Wds.dat"), std::ios::app);
         for (int j = 0; j < NE; j++) {
             Wdsout3 << Wds[j] <<  " " << j << endl;
         }
@@ -1573,8 +1576,7 @@ void print_Wds(int trial, int NE, vector<double>& Wds) {
 // Here, we record which trials are rewarded.
 void record_Trials_Rewarded(int reward) {
     ofstream Rewardout;
-    string working = workingDir;
-    Rewardout.open(working+"Reward.dat", std::ios::app);
+    Rewardout.open(workingPathToFile("Reward.dat"), std::ios::app);
     Rewardout << reward << endl;
     Rewardout.close();
 }
@@ -1582,8 +1584,7 @@ void record_Trials_Rewarded(int reward) {
 // Here, we print out our excitatory bin rate.
 void eOut_Trial(int nBins, double bindT, int dNPools, vector< vector<double> >& eBinRate) {
     ofstream Ebintrialout;
-    string working = workingDir;
-    Ebintrialout.open(working+"Ebintrial.dat", std::ios::app);
+    Ebintrialout.open(workingPathToFile("Ebintrial.dat"), std::ios::app);
     for (int bin= 0; bin < nBins; bin++) {
         Ebintrialout << bindT * bin << " ";
         for (int pool = 0; pool < dNPools; pool++) {
@@ -1597,8 +1598,7 @@ void eOut_Trial(int nBins, double bindT, int dNPools, vector< vector<double> >& 
 // Here, we print our stimuli order.
 void print_Stimuli_Order(int inputs, vector< int>& stimShuffle) {
     ofstream Stimuliout;
-    string working = workingDir;
-    Stimuliout.open(working+"Stimuli.dat", std::ios::app);
+    Stimuliout.open(workingPathToFile("Stimuli.dat"), std::ios::app);
     for (int i = 0; i < inputs; i++) {
         Stimuliout << stimShuffle[i] << endl;
     }
@@ -1628,8 +1628,7 @@ string createString(string prefix, int num, int digits) {
 // Here, we output our spike raster.
 void output_Spike_Raster(int trial, int neurons, int dNeurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes) {
     ofstream Rasterout;
-    string working = workingDir;
-    string Rasterstring = createString(working+"Raster_", trial, 3);
+    string Rasterstring = createString(workingPathToFile("Raster_"), trial, 3);
     Rasterstring += ".dat";
     Rasterout.open(Rasterstring.c_str());
     // Raster output
@@ -1644,8 +1643,7 @@ void output_Spike_Raster(int trial, int neurons, int dNeurons, vector< int>& num
 // Here, we output our current trial raster.
 void output_Current_Trial_Raster(int neurons, int dNeurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes) {
     ofstream currentRaster;  // outputs current trial raster, use for PC simulations to monitor persistence, not cluster.
-    string working = workingDir;
-    currentRaster.open(working+"currentRaster.dat");
+    currentRaster.open(workingPathToFile("currentRaster.dat"));
     for (int i = 0; i < neurons + dNeurons; i++) {
         for (int j = 0; j < numberSpikes[i]; j++) {
             currentRaster << spikeTimes[i][j] << " " << i << endl;
@@ -1657,8 +1655,7 @@ void output_Current_Trial_Raster(int neurons, int dNeurons, vector< int>& number
 // Here, we output our mean excitatory rate.
 void write_CueFr_1(int NE, vector< int>& cueFR) {
     ofstream cueFRout2;
-    string working = workingDir;
-    cueFRout2.open(working+"cueFR.dat", std::ios::app);
+    cueFRout2.open(workingPathToFile("cueFR.dat"), std::ios::app);
     double meanErate = 0;
     for (int j = 0; j < NE; j++) {
         cueFRout2 << cueFR[j] << " " << j << endl;
@@ -1671,8 +1668,7 @@ void write_CueFr_1(int NE, vector< int>& cueFR) {
 // Here, we output our mean I rate.
 void write_CueFr_2(int NE, int neurons, vector< int>& cueFR) {
     ofstream cueFRoutI;
-    string working = workingDir;
-    cueFRoutI.open(working+"cueFRI.dat", std::ios::app);
+    cueFRoutI.open(workingPathToFile("cueFRI.dat"), std::ios::app);
     double meanIrate = 0;
     for (int j = NE; j < neurons; j++) {
         cueFRoutI << cueFR[j] << " " << j << endl;
@@ -1685,8 +1681,7 @@ void write_CueFr_2(int NE, int neurons, vector< int>& cueFR) {
 // Here, we output our cueFR_1stStim values.
 void write_CueFr_1stStim(int NE, vector< int>& cueFR_1stStim) {
     ofstream cueFRout5;
-    string working = workingDir;
-    cueFRout5.open(working+"cueFR_1stStim.dat", std::ios::app);
+    cueFRout5.open(workingPathToFile("cueFR_1stStim.dat"), std::ios::app);
     for (int j = 0; j < NE; j++) {
         cueFRout5 << cueFR_1stStim[j] << " " << j << endl;
     }
@@ -1696,8 +1691,7 @@ void write_CueFr_1stStim(int NE, vector< int>& cueFR_1stStim) {
 // Here, we output our cueFR perst values.
 void write_CueFr_Perst(int NE, vector< int>& cueFR_Perst) {
     ofstream cueFRout4;
-    string working = workingDir;
-    cueFRout4.open(working+"cueFR_Perst.dat", std::ios::app);
+    cueFRout4.open(workingPathToFile("cueFR_Perst.dat"), std::ios::app);
     for (int j = 0; j < NE; j++) {
         cueFRout4 << cueFR_Perst[j] << " " << j << endl;
     }
@@ -1707,8 +1701,7 @@ void write_CueFr_Perst(int NE, vector< int>& cueFR_Perst) {
 // Here, we output our cueFR 2nd perst values.
 void write_CueFr_2nd_Perst(int NE, vector< int>& cueFR_2nd_Perst) {
     ofstream cueFRout6;
-    string working = workingDir;
-    cueFRout6.open(working+"cueFR_2nd_Perst.dat", std::ios::app);
+    cueFRout6.open(workingPathToFile("cueFR_2nd_Perst.dat"), std::ios::app);
     for (int j = 0; j < NE; j++) {
         cueFRout6 << cueFR_2nd_Perst[j] << " " << j << endl;
     }
@@ -1718,8 +1711,7 @@ void write_CueFr_2nd_Perst(int NE, vector< int>& cueFR_2nd_Perst) {
 // Here, we output our cueFR 2nd stim perst values.
 void write_CueFr_2ndStim_Perst(int NE, vector< int>& cueFR_2ndStim_Perst) {
     ofstream cueFRout3;
-    string working = workingDir;
-    cueFRout3.open(working+"cueFR_2ndStim_Perst.dat", std::ios::app);
+    cueFRout3.open(workingPathToFile("cueFR_2ndStim_Perst.dat"), std::ios::app);
     for (int j = 0; j < NE; j++) {
         cueFRout3 << cueFR_2ndStim_Perst[j] << " " << j << endl;
     }
@@ -1730,13 +1722,12 @@ void write_CueFr_2ndStim_Perst(int NE, vector< int>& cueFR_2ndStim_Perst) {
 void write_Mean_PerstFR(double mean_ENeuron_Delay_Rate, double mean_ENeuron_2nd_Delay_Rate) {
      // First
      ofstream mean_perstFR;
-     string working = workingDir;
-     mean_perstFR.open(working+"mean_perstFR.dat", std::ios::app);
+     mean_perstFR.open(workingPathToFile("mean_perstFR.dat"), std::ios::app);
      mean_perstFR << mean_ENeuron_Delay_Rate << endl;
      mean_perstFR.close();
      // Second
      ofstream mean_2nd_perstFR;
-     mean_2nd_perstFR.open(working+"mean_2nd_perstFR.dat", std::ios::app);
+     mean_2nd_perstFR.open(workingPathToFile("mean_2nd_perstFR.dat"), std::ios::app);
      mean_2nd_perstFR << mean_ENeuron_2nd_Delay_Rate << endl;
      mean_2nd_perstFR.close();
 }
@@ -1744,8 +1735,7 @@ void write_Mean_PerstFR(double mean_ENeuron_Delay_Rate, double mean_ENeuron_2nd_
 // Here, we write out our mean AL excitatory cell bin rate for a trial.
 void AL_ECell_BinTrial(int nBins, double bindT, int neurons, vector< vector<double> >& AL_ECell_BinRate) {
     ofstream AL_ECell_BinTrialout;
-    string working = workingDir;
-    AL_ECell_BinTrialout.open(working+"Mean_AL_ECell_BinRate.dat", std::ios::app);
+    AL_ECell_BinTrialout.open(workingPathToFile("Mean_AL_ECell_BinRate.dat"), std::ios::app);
     for (int bin = 0; bin < nBins; bin++) {
         AL_ECell_BinTrialout << bindT * bin << " ";
         for (int cell = 0; cell < neurons; cell++) {
@@ -1759,8 +1749,7 @@ void AL_ECell_BinTrial(int nBins, double bindT, int neurons, vector< vector<doub
 // Here, we write out our mean AL Excitatory cell bin rate for a trial.
 void output_AL_ECell_BinRate(int trial, int nBins, double bindT, int neurons, vector< vector<double> >& AL_ECell_BinRate) {
     ofstream AL_ECell_BinRate_out;
-    string working = workingDir;
-    string AL_ECell_BinRate_string = createString(working+"Mean_AL_ECell_BinRate_out_", trial, 3);
+    string AL_ECell_BinRate_string = createString(workingPathToFile("Mean_AL_ECell_BinRate_out_"), trial, 3);
     AL_ECell_BinRate_string += ".dat";
     AL_ECell_BinRate_out.open(AL_ECell_BinRate_string.c_str());
     for (int bin= 0; bin < nBins; bin++) {
@@ -1776,8 +1765,7 @@ void output_AL_ECell_BinRate(int trial, int nBins, double bindT, int neurons, ve
 // Here, we output our final W and pW values.
 void print_Final_W_And_pW(int neurons, int dNeurons, vector< vector<double> >& W, vector< vector<double> >& pW, int nIn) {
     ofstream W_out;
-    string working = workingDir;
-    W_out.open(working+"W.dat");
+    W_out.open(workingPathToFile("W.dat"));
     for (int i = 0; i < neurons + dNeurons; i++) {
         for (int j = 0; j < neurons + dNeurons; j++) {
             W_out << W[i][j] << " "; //<< " i " << i << " j " << j << endl;
@@ -1786,7 +1774,7 @@ void print_Final_W_And_pW(int neurons, int dNeurons, vector< vector<double> >& W
     }
     W_out.close();
     ofstream pW_out;  // output initial input weight matrix
-    pW_out.open(working+"pW.dat");
+    pW_out.open(workingPathToFile("pW.dat"));
     for (int i = 0; i < nIn; i++) {
         for (int j = 0; j < neurons + dNeurons; j++) {
             pW_out << pW[i][j] << " ";
@@ -1799,8 +1787,7 @@ void print_Final_W_And_pW(int neurons, int dNeurons, vector< vector<double> >& W
 // Here, we output our W values each 10 trials (as well as final trial).
 void output_Regularly_W(int trial, int neurons, int dNeurons, vector< vector<double> >& W) {
     ofstream Wout;
-    string working = workingDir;
-    string Wstring = createString(working+"Wout_", trial, 3);
+    string Wstring = createString(workingPathToFile("Wout_"), trial, 3);
     Wstring += ".dat";
     Wout.open(Wstring.c_str());  
     for (int i = 0; i < neurons + dNeurons; i++) {
@@ -1815,8 +1802,7 @@ void output_Regularly_W(int trial, int neurons, int dNeurons, vector< vector<dou
 // Here, we output our pW values each 10 trials (as well as final trial).
 void output_Regularly_pW(int trial, int nIn, int neurons, int dNeurons, vector< vector<double> >& pW) {
     ofstream pWout2;
-    string working = workingDir;
-    string pWstring = createString(working+"pWout_", trial, 3);
+    string pWstring = createString(workingPathToFile("pWout_"), trial, 3);
     pWstring += ".dat";
     pWout2.open(pWstring.c_str());  
     for (int i = 0; i < nIn; i++) {
@@ -1831,8 +1817,7 @@ void output_Regularly_pW(int trial, int nIn, int neurons, int dNeurons, vector< 
 // Here, we output our voltage data.
 void output_Voltage_Data(int nT, int neurons, int dNeurons, vector< vector<double> >& V) {   
     ofstream V_out;
-    string working = workingDir;
-    V_out.open(working+"V.dat");
+    V_out.open(workingPathToFile("V.dat"));
     for (int i = 0; i <= nT; i++) {
         for (int j = neurons; j < neurons + dNeurons; j++) {
             V_out << V[j][i] << " ";
@@ -1906,8 +1891,7 @@ void print_Mean_wInI(int nIn, int neurons, vector< vector<double> >& pW) {
 void output_N_Changes(int nTotChanges, int NE, vector< int>& nPreChange, vector< int>& nPostChange) { 
     cout << " nTotalchange " << nTotChanges << endl;
     ofstream NchangesOut;
-    string working = workingDir;
-    NchangesOut.open(working+"Nchanges.dat");
+    NchangesOut.open(workingPathToFile("Nchanges.dat"));
     for (int i = 0; i < NE; i++) {
         NchangesOut << i << " " << nPreChange[i] << " " << nPostChange [i] << endl;
     }
