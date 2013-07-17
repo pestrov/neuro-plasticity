@@ -38,4 +38,4 @@ const double dLayerInput_W0 = dLayerInput * W0;
 
 // bool matrices
 const int totalNeurons = neurons + dNeurons; // This is used when passing C1 as a parameter
-bool C1[neurons + dNeurons][neurons + dNeurons];
+bool C1[neurons + dNeurons][neurons + dNeurons]; //THE MATRIX, showing if the synapse is active or not

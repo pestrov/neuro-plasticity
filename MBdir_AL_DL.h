@@ -1,5 +1,5 @@
 // Size of network and number of trials
-const int nTrials = 2;
+const int nTrials = 200;
 const int neurons = 600;
 const int interneurons = int(neurons / 5);
 const int NE = neurons - interneurons;

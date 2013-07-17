@@ -6,3 +6,7 @@ vector< vector<int> > decisionHist(nTrials, inputsVec);  // Initialize Reward ex
 vector<double> histFactor(historyLength);  // History factor for REWARD PREDICTION ERROR FACTOR INTO DOPAMINE SIGNAL, exponential decay.
 //DA Reward constant
 const double DA_Epsilon = 0.0001;  // 0.001 is too strong
+
+//Stores the maximum firing rates of each neuron
+vector<double> maxFiringRates(NE);
+vector< vector<vector<double>>>averageFiringRates(NE, vector<vector<double>>(4,vector<double>(5)));

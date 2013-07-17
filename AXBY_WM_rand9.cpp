@@ -17,6 +17,7 @@
 // 7/22/11 - split tuning of AL Ecells/Icells, initialized eBinRate to zero for bin 0, heterogeneity is now (rand1() - 0.5) with a printout for Matlab to verify output, added binned meanFR for all AL cells viewable in Matlab with script, other changes/additions...
 // 6/18/13 - First complete draft of updated version done by William.  Created functions and header files, and improved readability.
 
+#define workingDir "/Users/nikitapestrov/Desktop/Neurointellect/Brandeis/Neural Activity/Results/"
 /*************************************************************************************/
 /* Step 1: Include Statements                                                        */
 /*************************************************************************************/
@@ -70,6 +71,7 @@ using namespace std;
 #include "BinsAndStim.h" // Bins and stim constants
 #include "TrialValues.h" // Trial-specific constants (constants that have to be reset for each new trial)
 
+#define outputFilesDirectory "/Users/nikitapestrov/Desktop/Neurointellect/Brandeis/Neural Activity"
 // MersenneTwister.h is used to create our random number generators
 // (rand1, rand2, and rand3) that are used throughout the program.
 // MersenneTwister will provide more randomized results than the default 
@@ -152,18 +154,18 @@ void fillHistFactor(vector<double>& histFactor, double& histFactorSum, double hi
 //// TIME FUNCTIONS ////
 
 // Here, we fill out our time vector.  We also initialize cue length, delay length, and stimulus delivery times.
-void fillTime(vector<double>& t, vector<double>& tOn, vector<double>& tOff, double& stimulus1Length, double& cue2Length, double& delay1Length, double& delay2Length, int tMax, int nT, double dt) {
+void fillTime(vector<double>& t, vector<double>& tOn, vector<double>& tOff, double& stimulus1Length, double& stimulus2Length, double& delay1Length, double& delay2Length, int tMax, int nT, double dt) {
     for (int i = 0; i <= nT; i++) {
         t[i] = dt * double(i);
     }
     // Stimulus delivery times, ex. A&B if no persistence, A-delay-B if persistence
-    tOn[0] = 0.250;
-    tOff[0] = 0.75;
-    tOn[1] = 1.25;
-    tOff[1] = 1.75;
+    tOn[0] = 0.5;
+    tOff[0] = 1.5;
+    tOn[1] = 0.5;
+    tOff[1] = 1.5;
     // Cue and delay lengths
     stimulus1Length = tOff[0] - tOn[0];
-    cue2Length = tOff[1] - tOn[1];
+    stimulus2Length = tOff[1] - tOn[1];
     delay1Length = tOn[1] - tOff[0];
     delay2Length = tMax - tOff[1];
 }
@@ -388,14 +390,14 @@ void initialize_Heterogeneity_Vectors(int neurons, int NE, int dNE, int dNeurons
     for (int i = neurons; i < neurons + dNE; i++) {  // Ecells
         E[i] = E_s; // -70e-3;  // -70mV
         tau_M[i] = 20e-3; //tau_M_S; // 20e-3; // 20mS 
-        g_L[i] = g_L_s; //25e-6; // 25nS
+        g_L[i] = 35e-6; //35e-6; // 35nS
         vth_E[i] = vth_E_sD; //vth_E_s; //-48e-3;  // -50mV
         vReset_E[i] = -55e-3; //vReset_E_s; // -60e-3; // -55mV
         tRef_E[i] = tRef_E_s; //.002; // 2ms
     }
     for (int i = neurons + dNE; i < neurons + dNeurons; i++) { // Icells
         E[i] = E_s; //-70e-3;  // -70mV
-        tau_M[i] = tau_M_S; //10e-3 ; // 10ms
+        tau_M[i] = 10e-3; //10e-3 ; // 10ms
         g_L[i] = 30e-6; //g_L_s; //20e-6;  // 20nS
         vth_I[i] = vth_I_sD; //-50e-3; // -50mV
         vReset_I[i] = -55e-3; //vReset_I_s; // -55e-3; // -55mV
@@ -499,9 +501,11 @@ void trial_Values_to_0(vector <vector<double> >& spikeTimes, vector< int>& numbe
 void initialize_LastSpike(int neurons, int dNeurons, int NE, int dNE, vector<double>& tRef_E, vector<double>& tRef_I, vector<double>& lastSpike) {
     // Initialize lastSpike 
     for (int l = 0; l < neurons + dNeurons; l++) {
-        lastSpike[l] = 2 * tRef_E[l];
+        //lastSpike[l] = 2 * tRef_E[l];
         if ((l >= NE && l <= neurons) || l >= neurons + dNE) {
             lastSpike[l] = 2 * tRef_I[l];
+        } else {
+            lastSpike[l] = 2 * tRef_E[l];
         }
     }
 }
@@ -614,8 +618,8 @@ void synapse_Cond_Update(int neurons, int dNeurons, int j, bool C1[][totalNeuron
         if (j != k && C1[k][j] == 1 && W[k][j] != 0) { // Inhibitory update
             if ((k >= NE && k < neurons) || k >= neurons + dNE) {  // Inhibitory cells
                 gSyn_I_Vec[j] += W[k][j] * syn_I[k];  //gGABA update
-            } 
-            // Associative layer ==> Decision layer Static/facilitating/depressing synapses 
+            }
+            // Associative layer ==> Decision layer Static/facilitating/depressing synapses
             if (k < NE && j >= neurons && j < neurons + dNE) {
                 if (!facilitation && !depression) {
                     gSyn_E_Vec[j] += W[k][j] * syn_E[k];
@@ -628,9 +632,9 @@ void synapse_Cond_Update(int neurons, int dNeurons, int j, bool C1[][totalNeuron
                 if (depression) { // HAXED TO MAKE AL-TO-DL Facilitating Facilitating for this Simulation only!!!!!
                     gSyn_E_Vec[j] += W[k][j] * synE_Fac[k];
                     gSyn_NMDA[j] += W[k][j] * synNMDA_Fac[k];
-                }  
-            } else { // All other synapses      
-                if (k < NE && j < NE) { // Facilitating recurrent excitatory synapses.
+                }
+            } else { // All other synapses
+                if (k < NE && j < NE) { // Facilitating recurrent excitatory synapses. TOASK: really facilitating?
                     gSyn_E_Vec[j] += W[k][j] * synE_Dep[k];
                     gSyn_NMDA[j] += W[k][j] * synNMDA_Dep[k];
                 } else {
@@ -639,7 +643,7 @@ void synapse_Cond_Update(int neurons, int dNeurons, int j, bool C1[][totalNeuron
                 }
             }
         }
-	} 
+	}
 }
 
 // Here, we perform our AL/DL conductance update.
@@ -674,7 +678,7 @@ void ALDL_Cond_Update(int j, vector<double>& gSyn_I_Vec, double gSyn_I, int NE, 
 	}    
 }
 
-// Here, we update gpSyn_Vec.
+// Here, we update gpSyn_Vec. TOASK: what the vector is this?
 void update_gpSyn_Vec(int j, int nIn, vector<double>& gpSyn_Vec, vector< vector<double> >& pW, double gpSyn, vector<double>& pSyn, bool urgency, int neurons, int dNE, double g_Urgency) {
     gpSyn_Vec[j] = 0;
 	for (int stim = 0; stim < nIn; stim++) {
@@ -838,46 +842,84 @@ void update_Inhib_Excit_Synapses(int j, double Vji, double vSpike, double synMax
 }
 
 // Here, we update our cue firing rate in cueFR.
-void write_Cue_Firing_Rate(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn0, double tOff0, double tOn1, double tOff1, vector< int>& cueFR, double stimulus1Length, double cue2Length) {
+void write_Cue_Firing_Rate(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn0, double tOff0, double tOn1, double tOff1, vector< int>& cueFR, double cue1Length, double cue2Length) {
     for (int j = 0; j < neurons; j++) {
         for (int k = 0; k < numberSpikes[j]; k++) {
             if ((spikeTimes[j][k] > tOn0 && spikeTimes[j][k] < tOff0) || (spikeTimes[j][k] > tOn1 && spikeTimes[j][k] < tOff1)) { // all spikes from start of first stim to end of 2nd stim.
                 cueFR[j]++;
             }
         }
-        cueFR[j] /= (stimulus1Length+cue2Length);
+        cueFR[j] /= (cue1Length+cue2Length);
     }
 }
+//Here me update the maximum fire rates and find the mean selectivity
+void measure_selectivity (int NE, vector<double>& maxFR, vector< int>& cueFR_2ndStim_Perst, int stimulus) {
+    
+    vector<double>selectivities(NE);
+    double selectivitySum = 0.0;//just to make it a bit faster without the second loop
+    for (int j = 0; j< NE; j++)  {
+        //Update maximum
+        if (cueFR_2ndStim_Perst[j]>maxFR[j])
+            maxFR[j] = cueFR_2ndStim_Perst[j];
+        //Update fire rates array
+        for (int trialIndex = 0; trialIndex<averageFiringRates[j][stimulus-1].size()-1; trialIndex++) {
+            averageFiringRates[j][stimulus-1][trialIndex] = averageFiringRates[j][stimulus-1][trialIndex+1];
+        }
+        averageFiringRates[j][stimulus-1][4] = cueFR_2ndStim_Perst[j];
+        double meanFR = 0.0;
+        for (int stimuliID = 0; stimuliID < 4; stimuliID++) {
+            for (int trialID = 0; trialID< averageFiringRates[j][stimulus-1].size();trialID++)
+                meanFR+=averageFiringRates[j][stimuliID][trialID];
+        }
+        meanFR/=20;// 5 trials * 4 pairs
+        if (meanFR) {
+            selectivities[j] = maxFR[j]/meanFR - 1;
+        }
+        selectivitySum+= selectivities[j];
+    }
+    double meanSelectivity = selectivitySum/NE;
+    cout<< "Mean selectivity is "<<meanSelectivity<<endl;
+    
+    //Write that to disk
+    ofstream selectiveFile;
+    string working = workingDir;
+    selectiveFile.open(working+"NPSelectivity.dat", std::ios::app);
+    selectiveFile << meanSelectivity<< endl;
+    selectiveFile.close();
 
+}
 // Here, we measure selectivity in 1st stim.
-void measure_Selectivity_1st_Stim(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn0, double tOff0, double tOn1, double tOff1, vector< int>& cueFR_1stStim, double stimulus1Length) {
+void measure_Selectivity_1st_Stim(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn0, double tOff0, double tOn1, double tOff1, vector< int>& cueFR_1stStim, double cue1Length) {
     for (int j = 0; j < neurons; j++) {
         for (int k = 0; k < numberSpikes[j]; k++) {
-            if (spikeTimes[j][k] > tOn0 && spikeTimes[j][k] < tOff0) { // 2nd stim spikes only.
+            if (spikeTimes[j][k] > tOn0 && spikeTimes[j][k] < tOff0) { // 1st stim spikes only.
                 cueFR_1stStim[j]++;
             }
         }
-    cueFR_1stStim[j] /= stimulus1Length;
+    cueFR_1stStim[j] /= cue1Length;
     }
 }
 
 // Here, we measure selectivity in 2nd stim (persistence).
-void measure_Selectivity_2nd_StimPerst(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn1, double tOff1, vector< int>& cueFR_2ndStim_Perst, double cue2Length) {
+void measure_Selectivity_2nd_StimPerst(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn1, double tOff1, vector< int>& cueFR_2ndStim_Perst,vector< int>& cueFR_1stStim, double cue2Length) {
     for (int j = 0; j < neurons; j++) {
         for (int k = 0; k < numberSpikes[j]; k++) {
             if (spikeTimes[j][k] > tOn1 && spikeTimes[j][k] < tOff1) { // 2nd stim spikes only.
                 cueFR_2ndStim_Perst[j]++;
+                
             }
         }
         cueFR_2ndStim_Perst[j] /= cue2Length;
+        //TODO:now cueFR_1stStim and cueFR_2ndStim_Perst are the same and are calculated down there
+        cueFR_1stStim[j] = cueFR_2ndStim_Perst[j];
     }
 }
 
-// Here, we measure selecitvity in persistence.
+// Here, we measure selecitvity in persistence. TOASK: why NE only?
 void measure_Selectivity_Perst(int NE, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOff0, double tOn1, vector< int>& cueFR_Perst, double delay1Length) {
     for (int j = 0; j < NE; j++) {
         for (int k = 0; k < numberSpikes[j]; k++) {
-            if (spikeTimes[j][k] > tOff0 && spikeTimes[j][k] < tOn1) {// 2nd stim spikes only.
+            if (spikeTimes[j][k] > tOff0 && spikeTimes[j][k] < tOn1) {// Between the stims
                 cueFR_Perst[j]++;
             }
         }
@@ -1340,7 +1382,7 @@ void print_Excitatory_BinRate(int nBins, double bindT, int dNPools, vector< vect
     ofstream poolout2;
     poolout1.open("pool1.dat");
     poolout2.open("pool2.dat"); 
-    for (int bin = 1; bin < nBins - 1; bin++) {
+    for (int bin = 0; bin < nBins; bin++) {
         cout << "Time bin: " << bindT * bin << "   ";
         for (int pool = 0; pool < dNPools; pool++) {
             cout << eBinRate[pool][bin] << "   ";
@@ -1394,7 +1436,7 @@ void find_Population(double eBinRate0testBin, double eBinRate1testBin, int& popu
 // Here, we find our populations' bin reaction time.
 void find_Reaction_Time(int nBins, vector< vector<double> >& eBinRate) {
     ofstream RTout;
-    RTout.open("RT.dat", ios::app);
+    RTout.open("RT.dat", std::ios::app);
     for (int bin = 0; bin < nBins; bin++) { 
         if (eBinRate[0][bin] > eBinRate[1][bin] + 20.0 && eBinRate[0][bin] >= 10) {
             cout << "Population 1 bin Reaction Time: " << bin << endl;
@@ -1482,7 +1524,7 @@ void compute_Max_Min_Change_Synapse(int NE, int neurons, int dNE, vector< vector
             }
         }
 	}
-	cout << "Mean W_AD 1 then 2 " << mean_W_AD1 / double(NE * dNE / 2) << " " << mean_W_AD2 / double(NE * dNE / 2) << endl;
+	cout << "Mean W_AD: first half and second half: " << mean_W_AD1 / double(NE * dNE / 2) << " " << mean_W_AD2 / double(NE * dNE / 2) << endl;
 }
 
 // Here, we print a selection of final information at the end of our plasticity if statement.
@@ -1507,7 +1549,8 @@ void print_Final_Plasticity_Info(double eBinRate0testBin, double eBinRate1testBi
 // Here, we print our WR_ds values.
 void print_WR_ds(int NE, vector<double>& WR_ds) { 
     ofstream WDSrout;
-    WDSrout.open("WDSr.dat", ios::app);
+    string working = workingDir;
+    WDSrout.open(working+"WDSr.dat", std::ios::app);
     for (int j = 0; j < NE; j++) {
         WDSrout << WR_ds[j] << " " << j << endl;
     }
@@ -1518,7 +1561,8 @@ void print_WR_ds(int NE, vector<double>& WR_ds) {
 void print_Wds(int trial, int NE, vector<double>& Wds) {
     if (trial == 1 || trial % 4 == 1 || trial == nTrials) {
         ofstream Wdsout3;
-        Wdsout3.open("Wds.dat", ios::app);
+        string working = workingDir;
+        Wdsout3.open(working+"Wds.dat", std::ios::app);
         for (int j = 0; j < NE; j++) {
             Wdsout3 << Wds[j] <<  " " << j << endl;
         }
@@ -1529,7 +1573,8 @@ void print_Wds(int trial, int NE, vector<double>& Wds) {
 // Here, we record which trials are rewarded.
 void record_Trials_Rewarded(int reward) {
     ofstream Rewardout;
-    Rewardout.open("Reward.dat", ios::app);
+    string working = workingDir;
+    Rewardout.open(working+"Reward.dat", std::ios::app);
     Rewardout << reward << endl;
     Rewardout.close();
 }
@@ -1537,7 +1582,8 @@ void record_Trials_Rewarded(int reward) {
 // Here, we print out our excitatory bin rate.
 void eOut_Trial(int nBins, double bindT, int dNPools, vector< vector<double> >& eBinRate) {
     ofstream Ebintrialout;
-    Ebintrialout.open("Ebintrial.dat", ios::app);
+    string working = workingDir;
+    Ebintrialout.open(working+"Ebintrial.dat", std::ios::app);
     for (int bin= 0; bin < nBins; bin++) {
         Ebintrialout << bindT * bin << " ";
         for (int pool = 0; pool < dNPools; pool++) {
@@ -1551,7 +1597,8 @@ void eOut_Trial(int nBins, double bindT, int dNPools, vector< vector<double> >& 
 // Here, we print our stimuli order.
 void print_Stimuli_Order(int inputs, vector< int>& stimShuffle) {
     ofstream Stimuliout;
-    Stimuliout.open("Stimuli.dat", ios::app);
+    string working = workingDir;
+    Stimuliout.open(working+"Stimuli.dat", std::ios::app);
     for (int i = 0; i < inputs; i++) {
         Stimuliout << stimShuffle[i] << endl;
     }
@@ -1581,7 +1628,8 @@ string createString(string prefix, int num, int digits) {
 // Here, we output our spike raster.
 void output_Spike_Raster(int trial, int neurons, int dNeurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes) {
     ofstream Rasterout;
-    string Rasterstring = createString("Raster_", trial, 3);
+    string working = workingDir;
+    string Rasterstring = createString(working+"Raster_", trial, 3);
     Rasterstring += ".dat";
     Rasterout.open(Rasterstring.c_str());
     // Raster output
@@ -1596,7 +1644,8 @@ void output_Spike_Raster(int trial, int neurons, int dNeurons, vector< int>& num
 // Here, we output our current trial raster.
 void output_Current_Trial_Raster(int neurons, int dNeurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes) {
     ofstream currentRaster;  // outputs current trial raster, use for PC simulations to monitor persistence, not cluster.
-    currentRaster.open("currentRaster.dat");
+    string working = workingDir;
+    currentRaster.open(working+"currentRaster.dat");
     for (int i = 0; i < neurons + dNeurons; i++) {
         for (int j = 0; j < numberSpikes[i]; j++) {
             currentRaster << spikeTimes[i][j] << " " << i << endl;
@@ -1608,7 +1657,8 @@ void output_Current_Trial_Raster(int neurons, int dNeurons, vector< int>& number
 // Here, we output our mean excitatory rate.
 void write_CueFr_1(int NE, vector< int>& cueFR) {
     ofstream cueFRout2;
-    cueFRout2.open("cueFR.dat", ios::app);
+    string working = workingDir;
+    cueFRout2.open(working+"cueFR.dat", std::ios::app);
     double meanErate = 0;
     for (int j = 0; j < NE; j++) {
         cueFRout2 << cueFR[j] << " " << j << endl;
@@ -1621,7 +1671,8 @@ void write_CueFr_1(int NE, vector< int>& cueFR) {
 // Here, we output our mean I rate.
 void write_CueFr_2(int NE, int neurons, vector< int>& cueFR) {
     ofstream cueFRoutI;
-    cueFRoutI.open("cueFRI.dat", ios::app);
+    string working = workingDir;
+    cueFRoutI.open(working+"cueFRI.dat", std::ios::app);
     double meanIrate = 0;
     for (int j = NE; j < neurons; j++) {
         cueFRoutI << cueFR[j] << " " << j << endl;
@@ -1634,7 +1685,8 @@ void write_CueFr_2(int NE, int neurons, vector< int>& cueFR) {
 // Here, we output our cueFR_1stStim values.
 void write_CueFr_1stStim(int NE, vector< int>& cueFR_1stStim) {
     ofstream cueFRout5;
-    cueFRout5.open("cueFR_1stStim.dat", ios::app);
+    string working = workingDir;
+    cueFRout5.open(working+"cueFR_1stStim.dat", std::ios::app);
     for (int j = 0; j < NE; j++) {
         cueFRout5 << cueFR_1stStim[j] << " " << j << endl;
     }
@@ -1644,7 +1696,8 @@ void write_CueFr_1stStim(int NE, vector< int>& cueFR_1stStim) {
 // Here, we output our cueFR perst values.
 void write_CueFr_Perst(int NE, vector< int>& cueFR_Perst) {
     ofstream cueFRout4;
-    cueFRout4.open("cueFR_Perst.dat", ios::app);
+    string working = workingDir;
+    cueFRout4.open(working+"cueFR_Perst.dat", std::ios::app);
     for (int j = 0; j < NE; j++) {
         cueFRout4 << cueFR_Perst[j] << " " << j << endl;
     }
@@ -1654,7 +1707,8 @@ void write_CueFr_Perst(int NE, vector< int>& cueFR_Perst) {
 // Here, we output our cueFR 2nd perst values.
 void write_CueFr_2nd_Perst(int NE, vector< int>& cueFR_2nd_Perst) {
     ofstream cueFRout6;
-    cueFRout6.open("cueFR_2nd_Perst.dat", ios::app);    
+    string working = workingDir;
+    cueFRout6.open(working+"cueFR_2nd_Perst.dat", std::ios::app);
     for (int j = 0; j < NE; j++) {
         cueFRout6 << cueFR_2nd_Perst[j] << " " << j << endl;
     }
@@ -1664,7 +1718,8 @@ void write_CueFr_2nd_Perst(int NE, vector< int>& cueFR_2nd_Perst) {
 // Here, we output our cueFR 2nd stim perst values.
 void write_CueFr_2ndStim_Perst(int NE, vector< int>& cueFR_2ndStim_Perst) {
     ofstream cueFRout3;
-    cueFRout3.open("cueFR_2ndStim_Perst.dat", ios::app);
+    string working = workingDir;
+    cueFRout3.open(working+"cueFR_2ndStim_Perst.dat", std::ios::app);
     for (int j = 0; j < NE; j++) {
         cueFRout3 << cueFR_2ndStim_Perst[j] << " " << j << endl;
     }
@@ -1675,12 +1730,13 @@ void write_CueFr_2ndStim_Perst(int NE, vector< int>& cueFR_2ndStim_Perst) {
 void write_Mean_PerstFR(double mean_ENeuron_Delay_Rate, double mean_ENeuron_2nd_Delay_Rate) {
      // First
      ofstream mean_perstFR;
-     mean_perstFR.open("mean_perstFR.dat", ios::app);
+     string working = workingDir;
+     mean_perstFR.open(working+"mean_perstFR.dat", std::ios::app);
      mean_perstFR << mean_ENeuron_Delay_Rate << endl;
      mean_perstFR.close();
      // Second
      ofstream mean_2nd_perstFR;
-     mean_2nd_perstFR.open("mean_2nd_perstFR.dat", ios::app);
+     mean_2nd_perstFR.open(working+"mean_2nd_perstFR.dat", std::ios::app);
      mean_2nd_perstFR << mean_ENeuron_2nd_Delay_Rate << endl;
      mean_2nd_perstFR.close();
 }
@@ -1688,7 +1744,8 @@ void write_Mean_PerstFR(double mean_ENeuron_Delay_Rate, double mean_ENeuron_2nd_
 // Here, we write out our mean AL excitatory cell bin rate for a trial.
 void AL_ECell_BinTrial(int nBins, double bindT, int neurons, vector< vector<double> >& AL_ECell_BinRate) {
     ofstream AL_ECell_BinTrialout;
-    AL_ECell_BinTrialout.open("Mean_AL_ECell_BinRate.dat", ios::app);
+    string working = workingDir;
+    AL_ECell_BinTrialout.open(working+"Mean_AL_ECell_BinRate.dat", std::ios::app);
     for (int bin = 0; bin < nBins; bin++) {
         AL_ECell_BinTrialout << bindT * bin << " ";
         for (int cell = 0; cell < neurons; cell++) {
@@ -1702,7 +1759,8 @@ void AL_ECell_BinTrial(int nBins, double bindT, int neurons, vector< vector<doub
 // Here, we write out our mean AL Excitatory cell bin rate for a trial.
 void output_AL_ECell_BinRate(int trial, int nBins, double bindT, int neurons, vector< vector<double> >& AL_ECell_BinRate) {
     ofstream AL_ECell_BinRate_out;
-    string AL_ECell_BinRate_string = createString("Mean_AL_ECell_BinRate_out_", trial, 3);
+    string working = workingDir;
+    string AL_ECell_BinRate_string = createString(working+"Mean_AL_ECell_BinRate_out_", trial, 3);
     AL_ECell_BinRate_string += ".dat";
     AL_ECell_BinRate_out.open(AL_ECell_BinRate_string.c_str());
     for (int bin= 0; bin < nBins; bin++) {
@@ -1718,7 +1776,8 @@ void output_AL_ECell_BinRate(int trial, int nBins, double bindT, int neurons, ve
 // Here, we output our final W and pW values.
 void print_Final_W_And_pW(int neurons, int dNeurons, vector< vector<double> >& W, vector< vector<double> >& pW, int nIn) {
     ofstream W_out;
-    W_out.open("W.dat");
+    string working = workingDir;
+    W_out.open(working+"W.dat");
     for (int i = 0; i < neurons + dNeurons; i++) {
         for (int j = 0; j < neurons + dNeurons; j++) {
             W_out << W[i][j] << " "; //<< " i " << i << " j " << j << endl;
@@ -1727,7 +1786,7 @@ void print_Final_W_And_pW(int neurons, int dNeurons, vector< vector<double> >& W
     }
     W_out.close();
     ofstream pW_out;  // output initial input weight matrix
-    pW_out.open("pW.dat");
+    pW_out.open(working+"pW.dat");
     for (int i = 0; i < nIn; i++) {
         for (int j = 0; j < neurons + dNeurons; j++) {
             pW_out << pW[i][j] << " ";
@@ -1740,7 +1799,8 @@ void print_Final_W_And_pW(int neurons, int dNeurons, vector< vector<double> >& W
 // Here, we output our W values each 10 trials (as well as final trial).
 void output_Regularly_W(int trial, int neurons, int dNeurons, vector< vector<double> >& W) {
     ofstream Wout;
-    string Wstring = createString("Wout_", trial, 3);
+    string working = workingDir;
+    string Wstring = createString(working+"Wout_", trial, 3);
     Wstring += ".dat";
     Wout.open(Wstring.c_str());  
     for (int i = 0; i < neurons + dNeurons; i++) {
@@ -1755,7 +1815,8 @@ void output_Regularly_W(int trial, int neurons, int dNeurons, vector< vector<dou
 // Here, we output our pW values each 10 trials (as well as final trial).
 void output_Regularly_pW(int trial, int nIn, int neurons, int dNeurons, vector< vector<double> >& pW) {
     ofstream pWout2;
-    string pWstring = createString("pWout_", trial, 3);
+    string working = workingDir;
+    string pWstring = createString(working+"pWout_", trial, 3);
     pWstring += ".dat";
     pWout2.open(pWstring.c_str());  
     for (int i = 0; i < nIn; i++) {
@@ -1770,7 +1831,8 @@ void output_Regularly_pW(int trial, int nIn, int neurons, int dNeurons, vector< 
 // Here, we output our voltage data.
 void output_Voltage_Data(int nT, int neurons, int dNeurons, vector< vector<double> >& V) {   
     ofstream V_out;
-    V_out.open("V.dat");	
+    string working = workingDir;
+    V_out.open(working+"V.dat");
     for (int i = 0; i <= nT; i++) {
         for (int j = neurons; j < neurons + dNeurons; j++) {
             V_out << V[j][i] << " ";
@@ -1844,7 +1906,8 @@ void print_Mean_wInI(int nIn, int neurons, vector< vector<double> >& pW) {
 void output_N_Changes(int nTotChanges, int NE, vector< int>& nPreChange, vector< int>& nPostChange) { 
     cout << " nTotalchange " << nTotChanges << endl;
     ofstream NchangesOut;
-    NchangesOut.open("Nchanges.dat");
+    string working = workingDir;
+    NchangesOut.open(working+"Nchanges.dat");
     for (int i = 0; i < NE; i++) {
         NchangesOut << i << " " << nPreChange[i] << " " << nPostChange [i] << endl;
     }
@@ -2069,24 +2132,31 @@ int main(int argc, char **argv) {
         vector<int> cueFR(neurons + dNeurons);
         // Write the cue firing rate of each neuron during stimulus presentation.
         write_Cue_Firing_Rate(neurons, numberSpikes, spikeTimes, tOn[0], tOff[0], tOn[1], tOff[1], cueFR, stimulus1Length, stimulus2Length);
+        
         // Activity during the first stimulus to measure selectivity  from 1st stimulus.
         vector<int> cueFR_1stStim(neurons);
-        measure_Selectivity_1st_Stim(neurons, numberSpikes, spikeTimes, tOn[0], tOff[0], tOn[1], tOff[1], cueFR_1stStim, stimulus1Length);
+        //TODO:I commented line below, since now cueFR_1stStim and cueFR_2ndStim_Perst are the same and are calculated down there
+        //measure_Selectivity_1st_Stim(neurons, numberSpikes, spikeTimes, tOn[0], tOff[0], tOn[1], tOff[1], cueFR_1stStim, stimulus1Length);
         // Activity during the second stimulus to measure selectivity with persistent activity from 1st stimulus. (When persistent selective activity has arisen).
         vector<int> cueFR_2ndStim_Perst(neurons);
-        measure_Selectivity_2nd_StimPerst(neurons, numberSpikes, spikeTimes, tOn[1], tOff[1], cueFR_2ndStim_Perst, stimulus2Length);
-        // Activity during the second stimulus to measure selectivity with persistent activity from 1st stimulus. (When persistent selective activity has arisen).
+        measure_Selectivity_2nd_StimPerst(neurons, numberSpikes, spikeTimes, tOn[1], tOff[1], cueFR_2ndStim_Perst, cueFR_1stStim, stimulus2Length);
+        // Activity between first and second stimulus
         vector<int> cueFR_Perst(neurons);
         measure_Selectivity_Perst(NE, numberSpikes, spikeTimes, tOff[0], tOn[1], cueFR_Perst, delay1Length);
+        
         // Find mean excitatory persistent delay activity
         double mean_ENeuron_Delay_Rate = 0;
         find_Mean_ENeuron_Delay_Rate(mean_ENeuron_Delay_Rate, NE, cueFR_Perst);
+        
         // Activity during the second delay period to measure selectivity with persistent activity from 1st+2nd stimulus. (When persistent selective activity has arisen).
         vector<int> cueFR_2nd_Perst(neurons);
         measure_Selectivity_2nd_Perst(NE, numberSpikes, spikeTimes, tOff[1], tMax, cueFR_2nd_Perst, delay2Length);
         // Finding mean excitatory 2nd persistent delay activity         
         double mean_ENeuron_2nd_Delay_Rate = 0;
         find_Mean_ENeuron_2nd_Delay_Rate(mean_ENeuron_2nd_Delay_Rate, NE, cueFR_2nd_Perst);
+        
+        measure_selectivity (NE, maxFiringRates,cueFR_2ndStim_Perst, stimulusNumber);
+        
         // Find bins and binRate
         cout << "Number of bins = " << nBins << endl;
         vector<double> binSize(nBins);
@@ -2173,7 +2243,7 @@ int main(int argc, char **argv) {
         // Basic Hebbian DA reward learning rule
         if (DL_Out) { 		
             cout << "Number of bins = " << nBins << endl; // Edit this so it shows up as 20 instead of 19
-            int testBin = int(tOff[1] / bindT) + 1;
+            int testBin = int(tOff[1] / bindT) - 1;
             if (testBin > nBins - 1) {
                 testBin = nBins - 1; // Time bin to test rate of "winning" pool
             }
@@ -2259,7 +2329,8 @@ int main(int argc, char **argv) {
         write_CueFr_2ndStim_Perst(NE, cueFR_2ndStim_Perst);
         // output mean persistent delay activity and mean 2nd persistent delay activity per trial as -- mean_perstFR append - i.e. one file
         write_Mean_PerstFR(mean_ENeuron_Delay_Rate, mean_ENeuron_2nd_Delay_Rate);
-        // END OF CUEFR OUTPUT DATA TYPES 
+        // END OF CUEFR OUTPUT DATA TYPES
+        
         // ASSOCIATIVE LAYER BINNED FIRING RATES (100 MS BINS) START
         //AL_Ecellout append trial version
         AL_ECell_BinTrial(nBins, bindT, neurons, AL_ECell_BinRate);

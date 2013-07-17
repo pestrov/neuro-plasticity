@@ -1,6 +1,6 @@
 // Excitatory
 const double vth_E_sA = -50e-3; // -45 Excitatory Vth
-const double vth_E_sD = -50e-3; // -45 Excitatory Vth
+const double vth_E_sD = -48e-3; // -45 Excitatory Vth
 const double VReset_E_s = -60e-3; // Excitatory reset
 const double TRef_E_s = 0.002; // Excitatory tau_ref
 // Inhibitory
