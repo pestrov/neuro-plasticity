@@ -195,7 +195,7 @@ void fillLoops(int NE, int neurons, double connProb, double wEE_xFactor, double 
     for (int i = 0; i < NE; i++) {
         for (int j = 0; j < NE; j++) {
             if (rand1() < connProb) { // WEE_conn_prob
-                W[i][j] = wEE_xFactor * W0 * (1 + ranWStrengths * (rand1() - 0.5));
+                W[i][j] = W0 * (1 + ranWStrengths * (rand1() - 0.5));//* wEE_xFactor;//2.5 * 0.167 = 0.4
             }
         }
     W[i][i] = 0; // No self-synapses
@@ -204,14 +204,14 @@ void fillLoops(int NE, int neurons, double connProb, double wEE_xFactor, double 
     for (int i = NE; i < neurons; i++) {
         for (int j = 0; j < NE; j++) {
             if (rand1() < wIE_ConnProb) {
-                W[i][j] = wIE0 * (1 + ranWStrengths * (rand1() - 0.5));
+                W[i][j] = wIE0 * (1 + ranWStrengths * (rand1() - 0.5)); //0.3
             }
         }
     }
     // NI-NI
     for (int i = NE; i < neurons; i++) {
         for (int j = NE; j < neurons; j++) {
-                W[i][j] = wII0* (1 + ranWStrengths * (rand1() - 0.5));
+                W[i][j] = wII0* (1 + ranWStrengths * (rand1() - 0.5)); //0.083
             }
     }
     //NE->NI (Recurrent I)

@@ -7,12 +7,12 @@ const bool inputIHomeostasis = 0;
 const bool oneTrialHomeo = 0;
 
 // P&G STDP bools
-const bool PG_EESTDP = 1;
-const bool PG_Input_ESTDP = 1;
+const bool PG_EESTDP = 0;
+const bool PG_Input_ESTDP = 0;
   
 //LTPi bool
-const bool LTPi = 1;
-const bool VLTPi = 1;
+const bool LTPi = 0;
+const bool VLTPi = 0;
   
 // DA reward based plasticity
 const bool DA_Reward = 1;

@@ -11,10 +11,10 @@ const double wII_ConnProb = 1.0;
 const double wEE_xFactor = 2.50;
 // We'll scale synaptic strength by network size.
 const double wEE0_Default = 100;
-const double wEE0 = 100 / double(neurons);
-const double wIE0 = (1.75 * wEE0_Default) / double(neurons);//0.2*WEE0;
-const double wEI0 = (1.75 * wEE0_Default) / double(neurons);// 0.5*WEE0; 
-const double wII0 = (0.5 * wEE0_Default) / double(neurons);   //1.0*W0;
+const double wEE0 = 0.05;//100 / double(neurons);
+const double wIE0 = 0.05;//(1.75 * wEE0_Default) / double(neurons);//0.2*WEE0;
+const double wEI0 = (1.75 * wEE0_Default) / double(neurons);// 0.5*WEE0;
+const double wII0 = 0.038;//(0.5 * wEE0_Default) / double(neurons);   //1.0*W0;
 const double W0 = wEE0;  // base synaptic strength
 const double connProb = wEE_ConnProb;
 
@@ -34,7 +34,7 @@ const double stimBiasPerc =  (1 - 1.0 / (pool1Weight / pool2Weight)) * 100.0;
 
 // Decision layer weights
 const double dW0 = 1 * 5 / double(dNeurons);  // Decision layer within weights
-const double dLayerInput_W0 = dLayerInput * W0;
+const double dLayerInput_W0 = 0.088;//dLayerInput * W0;
 
 // bool matrices
 const int totalNeurons = neurons + dNeurons; // This is used when passing C1 as a parameter
