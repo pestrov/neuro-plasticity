@@ -19,13 +19,13 @@ const double nSigma_E = 1.2e-3;//1.2e-3; // AL_E conductance noise amplitude
 const double nSigma_I = 1.2e-3;//1.2e-3; // AL_I conductance noise amplitude
 
 //Goal rates
-const int rgE = 8;  // excitatory
+const int rgE = 4;  // excitatory
 const int rgI = 10; // inhibitory
 const int rgD = 20;   // Decision layer Ecells
 const double rgIE0 = 8 - rgE;// (rgI*tmax*exp(-LTPi_window*rgE)*idW)/e;  // currently hand-tuned.  subtract rgE since it's added below.
 
 const double g_L_s = 35e-6;//35e-6;//23e-6; // Leak conductance - increase -> harder to fire
-const double AL_g_L_s = 35e-6;//35e-6;//23e-6; // Leak conductance - increase -> harder to fire
+const double AL_g_L_s = 36e-6;//35e-6;//23e-6; // Leak conductance - increase -> harder to fire
 const double pW02 = 4;//8.0; //2max // how much to amplify the read-in pW by.
 const double pW0I2 = 4;//10.0;//3.50--12.0 worked but, made too strong V deflections // how much to amplify the read-in pW by.
 

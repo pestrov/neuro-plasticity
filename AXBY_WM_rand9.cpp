@@ -217,9 +217,11 @@ void fillLoops(int NE, int neurons, double connProb, double wEE_xFactor, double 
     //NE->NI (Recurrent I)
     for (int i = 0; i < NE; i++) {
         for (int j = NE; j < neurons; j++) {
-            if (rand1() < wEI_ConnProb) {
-                W[i][j] = wEI0 * (1 + ranWStrengths * (rand1() - 0.5));
-            }
+             W[i][j] = 0;
+//            if (rand1() < wEI_ConnProb) {
+//                W[i][j] = 0;// wEI0 * (1 + ranWStrengths * (rand1() - 0.5));
+//                //No exc to inh connections
+//            }
         }
     }
 }
@@ -858,30 +860,32 @@ const char* workingPathToFile(string filename){
     working+=filename;
     return working.c_str();
 }
-//Here me update the maximum fire rates and find the mean selectivity
-void measure_selectivity (int NE, vector<double>& maxFR, vector< int>& cueFR_2ndStim_Perst, int stimulus) {
+//Here me update the maximum fire\ing rates and find the mean selectivity
+void measure_selectivity (int NE, vector< int>& cueFR_2ndStim_Perst, int stimulus) {
     
-    vector<double>selectivities(NE);
     double selectivitySum = 0.0;//just to make it a bit faster without the second loop
     for (int j = 0; j< NE; j++)  {
-        //Update maximum
-        if (cueFR_2ndStim_Perst[j]>maxFR[j])
-            maxFR[j] = cueFR_2ndStim_Perst[j];
-        //Update fire rates array
+        //Update firing rates array
         for (int trialIndex = 0; trialIndex<averageFiringRates[j][stimulus-1].size()-1; trialIndex++) {
             averageFiringRates[j][stimulus-1][trialIndex] = averageFiringRates[j][stimulus-1][trialIndex+1];
         }
+        //Add the new mean firing rate
         averageFiringRates[j][stimulus-1][4] = cueFR_2ndStim_Perst[j];
         double meanFR = 0.0;
+        double maxFR = 0.0;
+        vector<double> avFiringRates(4);
         for (int stimuliID = 0; stimuliID < 4; stimuliID++) {
-            for (int trialID = 0; trialID< averageFiringRates[j][stimulus-1].size();trialID++)
+            for (int trialID = 0; trialID< averageFiringRates[j][stimulus-1].size();trialID++) {
                 meanFR+=averageFiringRates[j][stimuliID][trialID];
+                avFiringRates[stimuliID]+=averageFiringRates[j][stimuliID][trialID];
+            }
+            //Find a maximum across all the stimuli
+            if (avFiringRates[stimuliID]>maxFR)
+                maxFR = avFiringRates[stimuliID];
         }
         meanFR/=20;// 5 trials * 4 pairs
-        if (meanFR) {
-            selectivities[j] = maxFR[j]/meanFR - 1;
-        }
-        selectivitySum+= selectivities[j];
+        if (meanFR)
+            selectivitySum+= (maxFR/meanFR - 1);
     }
     double meanSelectivity = selectivitySum/NE;
     cout<< "Mean selectivity is "<<meanSelectivity<<endl;
@@ -2139,7 +2143,7 @@ int main(int argc, char **argv) {
         double mean_ENeuron_2nd_Delay_Rate = 0;
         find_Mean_ENeuron_2nd_Delay_Rate(mean_ENeuron_2nd_Delay_Rate, NE, cueFR_2nd_Perst);
         
-        measure_selectivity (NE, maxFiringRates,cueFR_2ndStim_Perst, stimulusNumber);
+        measure_selectivity (NE,cueFR_2ndStim_Perst, stimulusNumber);
         
         // Find bins and binRate
         cout << "Number of bins = " << nBins << endl;

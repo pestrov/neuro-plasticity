@@ -22,7 +22,7 @@ const bool rewardExpectation = 1; // Make DA based on Reward Expectaion Error
 
 // Short-term plasticity bools
 const bool facilitation = 1;
-const bool depression = 1;
+const bool depression = 0;
   
 // Structural Change bool
 const bool structPlast = 1;  

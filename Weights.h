@@ -7,7 +7,7 @@ const double wII = 2.0;
 const double wEE_ConnProb = 0.1;
 const double wIE_ConnProb = 0.25;
 const double wEI_ConnProb = 0.25;//0.25;//0.1;
-const double wII_ConnProb = 0.25;
+const double wII_ConnProb = 1.0;
 const double wEE_xFactor = 2.50;
 // We'll scale synaptic strength by network size.
 const double wEE0_Default = 100;

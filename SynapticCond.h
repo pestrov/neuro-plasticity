@@ -1,8 +1,8 @@
 // Synaptic Conductances (AL = Associative layer, DL=Decision Layer)
 const double GAL_I_AMPA = 3.0e-6; //1.5e-6;
-const double GAL_I_NMDA = 4.0e-6;// 
+const double GAL_I_NMDA = 3.0e-6;//
 const double GAL_E_AMPA = 3.0e-6; //1.5e-6;
-const double GAL_E_NMDA = 6.0e-6;// 
+const double GAL_E_NMDA = 3.0e-6;//
 
 const double GDL_AMPA = 2.0e-6;
 const double GDL_NMDA = 6.0e-6;
