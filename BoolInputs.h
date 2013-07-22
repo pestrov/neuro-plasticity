@@ -4,15 +4,15 @@
 const bool EE_Homeostasis = 1;
 const bool inputEHomeostasis = 1;
 const bool inputIHomeostasis = 0;
-const bool oneTrialHomeo = 0;
+const bool oneTrialHomeo = 1;
 
 // P&G STDP bools
 const bool PG_EESTDP = 0;
 const bool PG_Input_ESTDP = 0;
   
 //LTPi bool
-const bool LTPi = 0;
-const bool VLTPi = 0;
+const bool LTPi = 1;
+const bool VLTPi = 1;
   
 // DA reward based plasticity
 const bool DA_Reward = 1;

@@ -1,7 +1,7 @@
 // Weights
 const double wEE = 1.0;
-const double wEI = 90.0;
-const double wIE = 10.0;
+const double wEI = 50.0;//90.0;
+const double wIE = 8.0;//10.0;
 const double wII = 2.0;
 //Network Weight Matrices and values
 const double wEE_ConnProb = 0.1;

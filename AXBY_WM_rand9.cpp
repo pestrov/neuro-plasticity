@@ -14,7 +14,7 @@
 // 10/20/10: 4 trials of no plasticity every 80 trials to check specificity.
 // 1/1/11 - cueFR adjusted for 3 epochs, normalized by length (cue1, cue1+cue2, delay, 2nd cue + overlaying delay).  DL_Out only during 2nd stimulus, uses correct 2nd cueFR
 // 3/15/11: - Fixed Input triplet STDP normalization to pW02, not pW0, (kept for reading matrices), Corrected itime (was integer) in LTPi window code.  
-// 7/22/11 - split tuning of AL Ecells/Icells, initialized eBinRate to zero for bin 0, heterogeneity is now (rand1() - 0.5) with a printout for Matlab to verify output, added binned meanFR for all AL cells viewable in Matlab with script, other changes/additions...
+// 7/22/11 - split tuning of AL Ecells/Icells, initialized eBinRate to zero for bin 0, heterogeneity is now (rand1() - 0.5) with a printout for Matlab to verify output, added binned meanFR for all AL cells viewable in Matlab with script, otherrf changes/additions...
 // 6/18/13 - First complete draft of updated version done by William.  Created functions and header files, and improved readability.
 
 #define workingDir "/Users/nikitapestrov/Desktop/Neurointellect/Brandeis/Neural Activity/Results/"
@@ -126,12 +126,14 @@ void findDigits(int& digit1, int& digit2, int& numIn) {
 // Here, we use the digits we just found to find the number of input cells and the input
 // probability.
 void findinputs(int& digit1, int& digit2, int& inputCells, double& inputProb, int* inputCellArray, double* inputProbArray) {
-    if (digit1 > 0) {
-        inputCells = inputCellArray[digit1 - 1];
-    }
-    if (digit2 > 0) {
-        inputProb = inputProbArray[digit2 - 1];
-    }
+//    if (digit1 > 0) {
+//        inputCells = inputCellArray[digit1 - 1];
+//    }
+//    if (digit2 > 0) {
+//        inputProb = inputProbArray[digit2 - 1];
+//    }
+    inputCells = inputCellArray[0];
+    inputProb = inputProbArray[1];
     // We print the inputs for our cells and probability values.
     cout << "inputCells: " << inputCells << endl;
     cout << "inputProb: " << inputProb << endl;
@@ -879,11 +881,12 @@ void measure_selectivity (int NE, vector< int>& cueFR_2ndStim_Perst, int stimulu
                 meanFR+=averageFiringRates[j][stimuliID][trialID];
                 avFiringRates[stimuliID]+=averageFiringRates[j][stimuliID][trialID];
             }
+            avFiringRates[stimuliID]/=5.0;
             //Find a maximum across all the stimuli
             if (avFiringRates[stimuliID]>maxFR)
                 maxFR = avFiringRates[stimuliID];
         }
-        meanFR/=20;// 5 trials * 4 pairs
+        meanFR/=20.0;// 5 trials * 4 pairs
         if (meanFR)
             selectivitySum+= (maxFR/meanFR - 1);
     }
