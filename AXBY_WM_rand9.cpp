@@ -900,6 +900,19 @@ void measure_selectivity (int NE, vector< int>& cueFR_2ndStim_Perst, int stimulu
     selectiveFile.close();
 
 }
+void measure_decision_performance (vector< vector<int> > &decisionHistory, int trialBatch, int trial)
+{
+    if (trial%4 == 0) {
+        int numberOfTrialsTakenIntoAccount = 1;
+        double totalReward = 0.0;
+        for (int trialBatchNumber = trialBatch; trialBatchNumber >= 0 && numberOfTrialsTakenIntoAccount<=10;trialBatchNumber--,numberOfTrialsTakenIntoAccount++)
+            for (int stimNum = 0; stimNum < 4; stimNum++)
+                if (decisionHistory[trialBatchNumber][stimNum] == 1)
+                    totalReward+=1.0;
+        cout<<"Descision Performance :"<<totalReward/((numberOfTrialsTakenIntoAccount-1)*4)*100.0<<" %"<<endl;
+    }
+    
+}
 // Here, we measure selectivity in 1st stim.
 void measure_Selectivity_1st_Stim(int neurons, vector< int>& numberSpikes, vector< vector<double> >& spikeTimes, double tOn0, double tOff0, double tOn1, double tOff1, vector< int>& cueFR_1stStim, double cue1Length) {
     for (int j = 0; j < neurons; j++) {
@@ -2287,6 +2300,7 @@ int main(int argc, char **argv) {
             record_Trials_Rewarded(reward);
             // Attempt at EOut trial version
             eOut_Trial(nBins, bindT, dNPools, eBinRate);
+            measure_decision_performance(decisionHist, trialBatch, trial);
         }
         // Outputs stimuli order over all trials
         // only write out when new stimuli block is delivered

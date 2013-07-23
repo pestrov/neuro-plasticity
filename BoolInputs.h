@@ -3,7 +3,7 @@
 // Homeostasis bools
 const bool EE_Homeostasis = 1;
 const bool inputEHomeostasis = 1;
-const bool inputIHomeostasis = 0;
+const bool inputIHomeostasis = 1;
 const bool oneTrialHomeo = 1;
 
 // P&G STDP bools
