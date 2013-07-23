@@ -11,21 +11,22 @@ const bool PG_EESTDP = 0;
 const bool PG_Input_ESTDP = 0;
   
 //LTPi bool
-const bool LTPi = 1;
-const bool VLTPi = 1;
+const bool LTPi = 0;
+const bool VLTPi = 0;
   
 // DA reward based plasticity
 const bool DA_Reward = 1;
 const bool DA_Reward_Homeostasis = 1; // not actively used
 const bool urgency = 1; // Ramping "Urgency SIgnal" for decision-making
 const bool rewardExpectation = 1; // Make DA based on Reward Expectaion Error
+const bool DARewardInAL = 0;//DA reward rule is also applied in the A layer
 
 // Short-term plasticity bools
 const bool facilitation = 1;
 const bool depression = 0;
   
 // Structural Change bool
-const bool structPlast = 1;  
+const bool structPlast = 0;
 
 // Structural inputs bools
 const bool preShift = 1;

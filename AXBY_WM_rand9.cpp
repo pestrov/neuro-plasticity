@@ -17,7 +17,7 @@
 // 7/22/11 - split tuning of AL Ecells/Icells, initialized eBinRate to zero for bin 0, heterogeneity is now (rand1() - 0.5) with a printout for Matlab to verify output, added binned meanFR for all AL cells viewable in Matlab with script, otherrf changes/additions...
 // 6/18/13 - First complete draft of updated version done by William.  Created functions and header files, and improved readability.
 
-#define workingDir "/Users/nikitapestrov/Desktop/Neurointellect/Brandeis/Neural Activity/Results/"
+#define workingDir "/pestrov/neural/resultsDADL/"
 /*************************************************************************************/
 /* Step 1: Include Statements                                                        */
 /*************************************************************************************/
@@ -92,6 +92,12 @@ int seed3 = seed1;
 /* Step 2: Declaration of Functions                                                  */
 /*************************************************************************************/
 
+//Creates a path with working directory
+const char* workingPathToFile(string filename){
+    string working = workingDir;
+    working+=filename;
+    return working.c_str();
+}
 // Here, we declare the functions that will be used throughout the program.
 
 //// SEED, NUMIN, AND DIGITS FUNCTIONS ////
@@ -420,7 +426,7 @@ void initialize_StimShuffle(int inputs, vector< int>& stimShuffle) {
 void print_W(int neurons, int dNeurons, vector< vector<double> >& W) {
     // Prints initial W
     ofstream W02out;
-    W02out.open("W02.dat");
+    W02out.open(workingPathToFile("W02.dat"));
     for (int i = 0; i < neurons + dNeurons; i++) {
         for (int j = 0; j < neurons + dNeurons; j++) {
             W02out << W[i][j] << " ";
@@ -429,12 +435,52 @@ void print_W(int neurons, int dNeurons, vector< vector<double> >& W) {
     }
     W02out.close();
 }
+//Print all the AL neurons weights
+void print_AL_Weights(int neurons, int dNeurons, vector< vector<double> >& W, int trial) {
+    ofstream ALWeights;
+    ALWeights.open(workingPathToFile("ALWeights.dat"));
+    ALWeights <<"Trial"<<trial<<endl;
+    for (int i = 0; i < neurons; i++) {
+        for (int j = 0; j < neurons; j++) {
+            ALWeights << W[i][j] << " ";
+        }
+        ALWeights << endl;
+    }
+    ALWeights.close();
+}
+//Print all the AL to DL neurons weights
+void print_AL_to_DL_Weights(int neurons, int dNeurons, vector< vector<double> >& W, int trial) {
+    // Prints initial W
+    ofstream AL_to_DLWeights;
+    AL_to_DLWeights.open(workingPathToFile("AL_to_DLWeights.dat"));
+    AL_to_DLWeights <<"Trial"<<trial<<endl;
+    for (int i = 0; i < neurons; i++) {
+        for (int j = neurons; j < neurons+dNeurons; j++) {
+            AL_to_DLWeights << W[i][j] << " ";
+        }
+        AL_to_DLWeights << endl;
+    }
+    AL_to_DLWeights.close();
+}
+//Print all the AL neurons weights
+void print_DL_Weights(int neurons, int dNeurons, vector< vector<double> >& W, int trial) {
+    ofstream DLWeights;
+    DLWeights.open(workingPathToFile("DLWeights.dat"));
+    DLWeights <<"Trial"<<trial<<endl;
+    for (int i = neurons; i < neurons+dNeurons; i++) {
+        for (int j = neurons; j < neurons+dNeurons; j++) {
+            DLWeights << W[i][j] << " ";
+        }
+        DLWeights << endl;
+    }
+    DLWeights.close();
+}
 
 // Here, we print out the values of pW.
 void print_pW(int nIn, int NE, int NI, int dNeurons, vector< vector<double> >& pW) {
     // Write out Input weight matrix
     ofstream pW02_out;  // output initial input weight matrix
-    pW02_out.open("pW02.dat");
+    pW02_out.open(workingPathToFile("pW02.dat"));
     for (int i = 0; i < nIn; i++) {
         for (int j = 0; j < NE + NI + dNeurons; j++) {
             pW02_out << pW[i][j] << " ";
@@ -855,12 +901,6 @@ void write_Cue_Firing_Rate(int neurons, vector< int>& numberSpikes, vector< vect
         }
         cueFR[j] /= (cue1Length+cue2Length);
     }
-}
-//Creates a path with working directory
-const char* workingPathToFile(string filename){
-    string working = workingDir;
-    working+=filename;
-    return working.c_str();
 }
 //Here me update the maximum fire\ing rates and find the mean selectivity
 void measure_selectivity (int NE, vector< int>& cueFR_2ndStim_Perst, int stimulus) {
@@ -1527,6 +1567,11 @@ void poisson_DA_Reward_Rule(int NE, vector< int>& cueFR_2ndStim_Perst, double me
         if (population == 2) {
             for (int j = neurons + dNEPool; j < neurons + dNE; j++) {
                 W[i][j] += deltaWDA * dLayerInput_W0;
+            }
+        }
+        if (DARewardInAL) {
+            for (int j = 0; j < NE; j++) {
+                W[i][j] += deltaWDA * wEE0;
             }
         }
 	}
@@ -2301,6 +2346,12 @@ int main(int argc, char **argv) {
             // Attempt at EOut trial version
             eOut_Trial(nBins, bindT, dNPools, eBinRate);
             measure_decision_performance(decisionHist, trialBatch, trial);
+            //Dump the weights every 100 trials
+            if (trial%100 == 0) {
+                print_AL_Weights(neurons, dNeurons, W, trial);
+                print_AL_to_DL_Weights(neurons, dNeurons, W, trial);
+                print_DL_Weights(neurons, dNeurons, W, trial);
+            }
         }
         // Outputs stimuli order over all trials
         // only write out when new stimuli block is delivered
