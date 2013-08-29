@@ -17,7 +17,7 @@
 // 7/22/11 - split tuning of AL Ecells/Icells, initialized eBinRate to zero for bin 0, heterogeneity is now (rand1() - 0.5) with a printout for Matlab to verify output, added binned meanFR for all AL cells viewable in Matlab with script, otherrf changes/additions...
 // 6/18/13 - First complete draft of updated version done by William.  Created functions and header files, and improved readability.
 
-#define workingDir "/pestrov/neural/resultsDADL/"
+#define workingDir "/pestrov/neural/3resultsOn /"
 /*************************************************************************************/
 /* Step 1: Include Statements                                                        */
 /*************************************************************************************/
@@ -204,7 +204,7 @@ void fillLoops(int NE, int neurons, double connProb, double wEE_xFactor, double 
         for (int j = 0; j < NE; j++) {
             if (rand1() < connProb) { // WEE_conn_prob
                 W[i][j] = W0 * (1 + ranWStrengths * (rand1() - 0.5));//* wEE_xFactor;//2.5 * 0.167 = 0.4
-            }
+            } 
         }
     W[i][i] = 0; // No self-synapses
     }
@@ -684,13 +684,15 @@ void synapse_Cond_Update(int neurons, int dNeurons, int j, bool C1[][totalNeuron
                     gSyn_NMDA[j] += W[k][j] * synNMDA_Fac[k];
                 }
             } else { // All other synapses
-                if (k < NE && j < NE) { // Facilitating recurrent excitatory synapses. TOASK: really facilitating?
-                    gSyn_E_Vec[j] += W[k][j] * synE_Dep[k];
-                    gSyn_NMDA[j] += W[k][j] * synNMDA_Dep[k];
-                } else {
-                    gSyn_E_Vec[j] += W[k][j] * syn_E[k];
-                    gSyn_NMDA[j] += W[k][j] * syn_NMDA[k];
-                }
+                gSyn_E_Vec[j] += W[k][j] * syn_E[k];
+                gSyn_NMDA[j] += W[k][j] * syn_NMDA[k];
+//                if (k < NE && j < NE) {
+//                    gSyn_E_Vec[j] += W[k][j] * synE[k];//_Dep[k];
+//                    gSyn_NMDA[j] += W[k][j] * syn_NMDA[k];//_Dep[k];
+//                } else {
+//                    gSyn_E_Vec[j] += W[k][j] * syn_E[k];
+//                    gSyn_NMDA[j] += W[k][j] * syn_NMDA[k];
+//                }
             }
         }
 	}
@@ -1571,12 +1573,13 @@ void poisson_DA_Reward_Rule(int NE, vector< int>& cueFR_2ndStim_Perst, double me
         }
         if (DARewardInAL) {
             for (int j = 0; j < NE; j++) {
+              if (W[i][j]>0.0)
                 W[i][j] += deltaWDA * wEE0;
             }
         }
 	}
 }
- 
+
 // Here, we compute our max and min change in synapse.
 void compute_Max_Min_Change_Synapse(int NE, int neurons, int dNE, vector< vector<double> >& W, double dLayerInput_W0, double&  mean_W_AD1, double& mean_W_AD2) {
     for (int i = 0; i < NE; i++) {
@@ -2155,9 +2158,10 @@ int main(int argc, char **argv) {
                 // Total input conductance
                 g_Tot = g_L[j] + g_Ref[j] + gSyn_NMDA[j] * g_NMDA[j] + gSyn_E_Vec[j] + gSyn_I_Vec[j] + gpSyn_Vec[j];
                 // Associative layer and Decision layer use different voltage noise terms {nSigma, and Sigma} respectively
-                update_vInf(vInf, j, neurons, g_L[j], E[j], g_Ref[j], vReset, gSyn_NMDA[j], g_NMDA[j], E_NMDA, gSyn_E_Vec[j], E_AMPA, gSyn_I_Vec[j], E_GABA, gpSyn_Vec[j], nSigma, sigma, dt, g_Tot);           
+              
+                update_vInf(vInf, j, neurons, g_L[j], E[j], g_Ref[j], vReset, gSyn_NMDA[j], g_NMDA[j], E_NMDA, gSyn_E_Vec[j], E_AMPA, gSyn_I_Vec[j], E_GABA, gpSyn_Vec[j], nSigma, sigma, dt, g_Tot);
                 tau_Eff = (tau_M[j] * g_L[j]) / g_Tot; // Effective time constant changes with conductances (g_Tot)
-                V[j][i] = vInf[j] + (V[j][i - 1] - vInf[j]) * exp(-dt / tau_Eff); // V(Neuron) 	
+                V[j][i] = vInf[j] + (V[j][i - 1] - vInf[j]) * exp(-dt / tau_Eff); // V(Neuron)
                 g_NMDA[j] = 1 / (1 + mg_Ext * exp(-0.062 * (-V[j][i]) / 3.57e-3));  // Compte...Wang 02 g_NMDA
                 // Dynamic Thresholds, resets, and refractory conductances
                 update_Dynamic_Thresholds(j, NE, neurons, dNE, vth0, vth_I[j], Vth_E[j], tRef, tRef_I[j], TRef_E[j], Vth, vth_Max, t[i], lastSpike[j]);
@@ -2175,7 +2179,6 @@ int main(int argc, char **argv) {
                 // Update inhibitory and excitatory synapses
                 update_Inhib_Excit_Synapses(j, V[j][i], vSpike, synMax_I, synMax_E, synMax_NMDA, s0, syn_I, syn_E, syn_NMDA, NE, neurons, dNE, facilitation, depression, synE_Fac, synNMDA_Fac, Fac, synE_Dep, synNMDA_Dep, Dep, alpha, fMax, dFrac);
             }  // end network code ****
-            
             
         }  // end time integration
         vector<int> cueFR(neurons + dNeurons);

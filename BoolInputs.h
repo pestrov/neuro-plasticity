@@ -19,11 +19,11 @@ const bool DA_Reward = 1;
 const bool DA_Reward_Homeostasis = 1; // not actively used
 const bool urgency = 1; // Ramping "Urgency SIgnal" for decision-making
 const bool rewardExpectation = 1; // Make DA based on Reward Expectaion Error
-const bool DARewardInAL = 0;//DA reward rule is also applied in the A layer
+const bool DARewardInAL = 1;//DA reward rule is also applied in the A layer
 
 // Short-term plasticity bools
 const bool facilitation = 1;
-const bool depression = 0;
+const bool depression = 1;
   
 // Structural Change bool
 const bool structPlast = 0;
@@ -43,8 +43,8 @@ const bool voltageDat = 0;  // write out a voltage file (large in size)
 const bool debugFlagOn = 1;
 const bool DL_Out = 1; 
 
-// weight bools
-const bool weightsIn = 1;
+//// weight bools
+//const bool weightsIn = 1;
 
 // If you are testing Decision layer with Poisson Inputs
 const bool DL_Poisson_Test = 0;
